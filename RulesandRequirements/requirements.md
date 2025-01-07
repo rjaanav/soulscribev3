@@ -40,5 +40,3 @@ Vaultpage: Should Allow the user to browse their saved journals in an organized 
 ProfilePage: Should display the users First Name, Last Name and email. On the bottom should have a functional sign out button that signs the user out, and display the Sign in Page.
 
 ----------------
-
-I want to build an app based on the information above. You are a react native expert and engineer. Use a linear development process that develops the app step by step. Refer to the documentation provided above when developing the code. Optimize the functionality and the code, use best practices. Use a profesionally designed modern UI. At the end I want the app to be fully functional. Use javascript and refer to above tech stack with all the documentation while developing the code.

@@ -5,7 +5,10 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   Alert, 
-  ActivityIndicator 
+  ActivityIndicator,
+  TextInput,
+  TouchableWithoutFeedback,
+  Keyboard 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -17,7 +20,7 @@ import { auth, db } from '../../services/firebase';
 export default function BrainDumpScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [transcription, setTranscription] = useState<string | null>(null);
+  const [transcription, setTranscription] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Replace with your actual API Key
@@ -130,7 +133,7 @@ export default function BrainDumpScreen() {
       });
 
       Alert.alert('Success', 'Journal entry saved successfully');
-      setTranscription(null);
+      setTranscription('');
     } catch (err) {
       Alert.alert('Error', 'Failed to save journal entry');
       console.error(err);
@@ -138,64 +141,73 @@ export default function BrainDumpScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Brain Dump</Text>
-          <Text style={styles.subtitle}>Record your thoughts</Text>
-        </View>
-
-        {/* Record Button */}
-        <View style={styles.recordingContainer}>
-          <TouchableOpacity
-            style={[styles.recordButton, isRecording && styles.recordingActive]}
-            onPress={isRecording ? stopRecording : startRecording}
-          >
-            <Ionicons
-              name={isRecording ? 'stop' : 'mic'}
-              size={32}
-              color={COLORS.white}
-            />
-          </TouchableOpacity>
-          <Text style={styles.recordingText}>
-            {isRecording ? 'Tap to stop' : 'Tap to record'}
-          </Text>
-        </View>
-
-        {/* Transcribing Spinner */}
-        {isTranscribing && (
-          <View style={styles.transcribingContainer}>
-            <ActivityIndicator color={COLORS.primary} />
-            <Text style={styles.transcribingText}>Transcribing...</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Brain Dump</Text>
+            <Text style={styles.subtitle}>Record your thoughts</Text>
           </View>
-        )}
 
-        {/* Transcription Display */}
-        {transcription && (
-          <View style={styles.transcriptionContainer}>
-            <Text style={styles.transcriptionTitle}>Transcription</Text>
-            <Text style={styles.transcriptionText}>{transcription}</Text>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.discardButton]}
-                onPress={() => setTranscription(null)}
-              >
-                <Text style={styles.buttonText}>Discard</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
-                onPress={saveJournal}
-              >
-                <Text style={[styles.buttonText, styles.saveButtonText]}>
-                  Save to Vault
-                </Text>
-              </TouchableOpacity>
+          {/* Record Button */}
+          <View style={styles.recordingContainer}>
+            <TouchableOpacity
+              style={[styles.recordButton, isRecording && styles.recordingActive]}
+              onPress={isRecording ? stopRecording : startRecording}
+            >
+              <Ionicons
+                name={isRecording ? 'stop' : 'mic'}
+                size={32}
+                color={COLORS.white}
+              />
+            </TouchableOpacity>
+            <Text style={styles.recordingText}>
+              {isRecording ? 'Tap to stop' : 'Tap to record'}
+            </Text>
+          </View>
+
+          {/* Transcribing Spinner */}
+          {isTranscribing && (
+            <View style={styles.transcribingContainer}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.transcribingText}>Transcribing...</Text>
             </View>
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
+          )}
+
+          {/* Transcription Display */}
+          {transcription && (
+            <View style={styles.transcriptionContainer}>
+              <Text style={styles.transcriptionTitle}>Transcription</Text>
+              <TextInput
+                style={styles.transcriptionInput}
+                value={transcription}
+                onChangeText={setTranscription}
+                multiline
+                placeholder="Your transcribed text will appear here..."
+                placeholderTextColor={COLORS.textSecondary}
+              />
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.discardButton]}
+                  onPress={() => setTranscription('')}
+                >
+                  <Text style={styles.buttonText}>Discard</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.saveButton]}
+                  onPress={saveJournal}
+                >
+                  <Text style={[styles.buttonText, styles.saveButtonText]}>
+                    Save to Vault
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -265,10 +277,15 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SIZES.base,
   },
-  transcriptionText: {
+  transcriptionInput: {
     ...FONTS.body1,
     color: COLORS.text,
-    lineHeight: 24,
+    backgroundColor: COLORS.background,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: SIZES.padding,
   },
   actionButtons: {
     flexDirection: 'row',

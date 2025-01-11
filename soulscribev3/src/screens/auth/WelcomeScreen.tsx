@@ -22,7 +22,7 @@ export default function WelcomeScreen() {
 
         <View style={styles.imageContainer}>
           <Image 
-            source={require('../../../assets/welcome-illustration.png')}
+            source={require('../../../assets/soulscribelogowhite.png')}
             style={styles.image}
             resizeMode="contain"
           />

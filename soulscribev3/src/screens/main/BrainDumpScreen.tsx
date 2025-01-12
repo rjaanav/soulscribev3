@@ -8,7 +8,10 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableWithoutFeedback,
-  Keyboard 
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -141,73 +144,74 @@ export default function BrainDumpScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Brain Dump</Text>
-            <Text style={styles.subtitle}>Record your thoughts</Text>
-          </View>
-
-          {/* Record Button */}
-          <View style={styles.recordingContainer}>
-            <TouchableOpacity
-              style={[styles.recordButton, isRecording && styles.recordingActive]}
-              onPress={isRecording ? stopRecording : startRecording}
-            >
-              <Ionicons
-                name={isRecording ? 'stop' : 'mic'}
-                size={32}
-                color={COLORS.white}
-              />
-            </TouchableOpacity>
-            <Text style={styles.recordingText}>
-              {isRecording ? 'Tap to stop' : 'Tap to record'}
-            </Text>
-          </View>
-
-          {/* Transcribing Spinner */}
-          {isTranscribing && (
-            <View style={styles.transcribingContainer}>
-              <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.transcribingText}>Transcribing...</Text>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.container}>
+          <ScrollView style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Brain Dump</Text>
+              <Text style={styles.subtitle}>Record your thoughts</Text>
             </View>
-          )}
 
-          {/* Transcription Display */}
-          {transcription && (
-            <View style={styles.transcriptionContainer}>
-              <Text style={styles.transcriptionTitle}>Transcription</Text>
-              <TextInput
-                style={styles.transcriptionInput}
-                value={transcription}
-                onChangeText={setTranscription}
-                multiline
-                placeholder="Your transcribed text will appear here..."
-                placeholderTextColor={COLORS.textSecondary}
-              />
-              <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={[styles.button, styles.discardButton]}
-                  onPress={() => setTranscription('')}
-                >
-                  <Text style={styles.buttonText}>Discard</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.saveButton]}
-                  onPress={saveJournal}
-                >
-                  <Text style={[styles.buttonText, styles.saveButtonText]}>
-                    Save to Vault
-                  </Text>
-                </TouchableOpacity>
+            <View style={styles.recordingContainer}>
+              <TouchableOpacity
+                style={[styles.recordButton, isRecording && styles.recordingActive]}
+                onPress={isRecording ? stopRecording : startRecording}
+              >
+                <Ionicons
+                  name={isRecording ? 'stop' : 'mic'}
+                  size={32}
+                  color={COLORS.white}
+                />
+              </TouchableOpacity>
+              <Text style={styles.recordingText}>
+                {isRecording ? 'Tap to stop' : 'Tap to record'}
+              </Text>
+            </View>
+
+            {isTranscribing && (
+              <View style={styles.transcribingContainer}>
+                <ActivityIndicator color={COLORS.primary} />
+                <Text style={styles.transcribingText}>Transcribing...</Text>
               </View>
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+            )}
+
+            {transcription && (
+              <View style={styles.transcriptionContainer}>
+                <Text style={styles.transcriptionTitle}>Transcription</Text>
+                <TextInput
+                  style={styles.transcriptionInput}
+                  value={transcription}
+                  onChangeText={setTranscription}
+                  multiline
+                  placeholder="Your transcribed text will appear here..."
+                  placeholderTextColor={COLORS.textSecondary}
+                />
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.discardButton]}
+                    onPress={() => setTranscription('')}
+                  >
+                    <Text style={styles.buttonText}>Discard</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.saveButton]}
+                    onPress={saveJournal}
+                  >
+                    <Text style={[styles.buttonText, styles.saveButtonText]}>
+                      Save to Vault
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -283,7 +287,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderRadius: SIZES.radius,
     padding: SIZES.padding,
-    minHeight: 120,
+    minHeight: 150,
+    maxHeight: 300,
     textAlignVertical: 'top',
     marginBottom: SIZES.padding,
   },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -42,8 +42,15 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.greeting}>Welcome to</Text>
-          <Text style={styles.appName}>SoulScribe</Text>
+          <View>
+            <Text style={styles.greeting}>Welcome to</Text>
+            <Text style={styles.appName}>SoulScribe</Text>
+          </View>
+          <Image 
+            source={require('../../../assets/soulscribelogowhite.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.navigationContainer}>
@@ -82,6 +89,9 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.padding,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SIZES.padding * 2,
   },
   greeting: {
@@ -124,5 +134,9 @@ const styles = StyleSheet.create({
   buttonDescription: {
     ...FONTS.body2,
     color: COLORS.textSecondary,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
 }); 

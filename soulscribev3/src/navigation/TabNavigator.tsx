@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../types/navigation';
 import { COLORS, SIZES } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 
 // Import screens
 import HomeScreen from '../screens/main/HomeScreen';
@@ -21,15 +22,35 @@ export function TabNavigator() {
           backgroundColor: COLORS.background,
           borderTopWidth: 0,
           elevation: 0,
-          height: SIZES.padding * 3,
-          paddingBottom: SIZES.padding / 2,
+          height: SIZES.padding * 3.5,
+          paddingBottom: Platform.OS === 'ios' ? SIZES.padding : SIZES.padding / 2,
           paddingTop: SIZES.padding / 2,
+          position: 'absolute',
+          bottom: SIZES.padding / 115,
+          left: SIZES.padding,
+          right: SIZES.padding,
+          borderRadius: SIZES.radius,
+          ...Platform.select({
+            ios: {
+              shadowColor: COLORS.black,
+              shadowOffset: {
+                width: 0,
+                height: 4,
+              },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+            },
+            android: {
+              elevation: 8,
+            },
+          }),
         },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          paddingBottom: Platform.OS === 'ios' ? SIZES.base : 0,
         },
       }}
     >

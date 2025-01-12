@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
     gap: SIZES.base,
     marginTop: 'auto',
     paddingVertical: SIZES.padding,
+    marginBottom: SIZES.padding * 4,
   },
   signOutText: {
     ...FONTS.body1,

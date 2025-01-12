@@ -25,9 +25,12 @@ export default function BrainDumpScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [rawTranscription, setRawTranscription] = useState('');
 
-  // Replace with your actual API Key
+  // Replace with your API Keys
   const DEEPGRAM_API_KEY = '1a0a4ab31b59c23961ad2f6054994805631bcdf9';
+  const OPENAI_API_KEY = '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';
 
   // Cleanup the recorder when component unmounts
   useEffect(() => {
@@ -87,7 +90,56 @@ export default function BrainDumpScreen() {
     }
   }
 
-  // --- Transcribe Audio with Deepgram ---
+  async function processWithGPT(text: string) {
+    try {
+      setIsProcessing(true);
+      console.log('Sending to GPT:', text); // Debug log
+
+      const requestBody = {
+        model: "gpt-3.5-turbo",
+        messages: [{
+          role: "system",
+          content: "You are a professional journal editor. Your task is to:\n1. Fix any grammatical errors\n2. Remove unnecessary words\n3. Structure the text into a proper journal entry\n4. Make it look professional\nMaintain the original meaning and personal tone of the journal entry."
+        }, {
+          role: "user",
+          content: text
+        }],
+        temperature: 0.7,
+        max_tokens: 1000
+      };
+
+      console.log('Request body:', JSON.stringify(requestBody)); // Debug log
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+      console.log('GPT Response:', data); // Debug log
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      }
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from OpenAI');
+      }
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('GPT Processing error:', error);
+      Alert.alert('AI Enhancement Failed', 'Using original transcription instead');
+      return text;
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   async function transcribeAudio(uri: string) {
     try {
       setIsTranscribing(true);
@@ -100,22 +152,25 @@ export default function BrainDumpScreen() {
         name: 'audio.m4a',
       } as any);
 
-      // Send a multipart/form-data POST request to Deepgram
+      // Send to Deepgram
       const response = await fetch('https://api.deepgram.com/v1/listen', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${DEEPGRAM_API_KEY}`,
-          // 'Content-Type': 'multipart/form-data' // usually fetch sets this automatically
         },
         body: formData,
       });
 
       const data = await response.json();
-      console.log('Deepgram response:', data);
+      const transcribedText = data.results?.channels[0]?.alternatives[0]?.transcript || 'No transcription available';
+      
+      // Store raw transcription
+      setRawTranscription(transcribedText);
+      
+      // Process with GPT
+      const enhancedText = await processWithGPT(transcribedText);
+      setTranscription(enhancedText);
 
-      // Extract text from the Deepgram response
-      const transcribedText = data.results?.channels[0]?.alternatives[0]?.transcript;
-      setTranscription(transcribedText || 'No transcription available');
     } catch (err) {
       console.error('Transcription error:', err);
       Alert.alert('Error', 'Failed to transcribe audio');
@@ -172,28 +227,39 @@ export default function BrainDumpScreen() {
               </Text>
             </View>
 
-            {isTranscribing && (
+            {(isTranscribing || isProcessing) && (
               <View style={styles.transcribingContainer}>
                 <ActivityIndicator color={COLORS.primary} />
-                <Text style={styles.transcribingText}>Transcribing...</Text>
+                <Text style={styles.transcribingText}>
+                  {isTranscribing ? 'Transcribing...' : 'Enhancing with AI...'}
+                </Text>
               </View>
             )}
 
             {transcription && (
               <View style={styles.transcriptionContainer}>
-                <Text style={styles.transcriptionTitle}>Transcription</Text>
+                <Text style={styles.transcriptionTitle}>Enhanced Journal Entry</Text>
                 <TextInput
                   style={styles.transcriptionInput}
                   value={transcription}
                   onChangeText={setTranscription}
                   multiline
-                  placeholder="Your transcribed text will appear here..."
+                  placeholder="Your enhanced journal entry will appear here..."
                   placeholderTextColor={COLORS.textSecondary}
                 />
+                {rawTranscription && (
+                  <>
+                    <Text style={styles.rawTranscriptionTitle}>Original Transcription</Text>
+                    <Text style={styles.rawTranscriptionText}>{rawTranscription}</Text>
+                  </>
+                )}
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[styles.button, styles.discardButton]}
-                    onPress={() => setTranscription('')}
+                    onPress={() => {
+                      setTranscription('');
+                      setRawTranscription('');
+                    }}
                   >
                     <Text style={styles.buttonText}>Discard</Text>
                   </TouchableOpacity>
@@ -316,5 +382,16 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: COLORS.white,
+  },
+  rawTranscriptionTitle: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.padding,
+    marginBottom: SIZES.base,
+  },
+  rawTranscriptionText: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
   },
 });

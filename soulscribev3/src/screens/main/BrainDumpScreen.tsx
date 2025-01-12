@@ -19,7 +19,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { addDoc, collection } from 'firebase/firestore';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
 import { auth, db } from '../../services/firebase';
-
+import { 
+  DEEPGRAM_API_KEY, 
+  OPENAI_API_KEY
+} from '@env';
 export default function BrainDumpScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -29,8 +32,7 @@ export default function BrainDumpScreen() {
   const [rawTranscription, setRawTranscription] = useState('');
 
   // Replace with your API Keys
-  const DEEPGRAM_API_KEY = '1a0a4ab31b59c23961ad2f6054994805631bcdf9';
-  const OPENAI_API_KEY = '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';
+  
 
   // Cleanup the recorder when component unmounts
   useEffect(() => {

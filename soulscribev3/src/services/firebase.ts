@@ -1,6 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { 
+  DEEPGRAM_API_KEY, 
+  OPENAI_API_KEY, 
+  FIREBASE_API_KEY, 
+  FIREBASE_AUTH_DOMAIN, 
+  FIREBASE_PROJECT_ID, 
+  FIREBASE_STORAGE_BUCKET, 
+  FIREBASE_MESSAGING_SENDER_ID, 
+  FIREBASE_APP_ID 
+} from '@env';
 
 // Firebase configuration interface
 interface FirebaseConfig {
@@ -15,12 +25,12 @@ interface FirebaseConfig {
 // Initialize Firebase configuration
 // TODO: Replace with your Firebase config values
 const firebaseConfig: FirebaseConfig = {
-  apiKey: "AIzaSyCjW6x6MH0X9Xb-FhY0B18945Ddu8KC4SM",
-  authDomain: "soulscri.firebaseapp.com",
-  projectId: "soulscri",
-  storageBucket: "soulscri.firebasestorage.app",
-  messagingSenderId: "621669607026",
-  appId: "1:621669607026:web:d26c9511e96cca4d2184eb"
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID
 };
 
 // Initialize Firebase

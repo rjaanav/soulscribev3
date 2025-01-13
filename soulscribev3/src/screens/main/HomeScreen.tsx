@@ -283,6 +283,20 @@ export default function HomeScreen() {
           />
         </View>
 
+        <View style={styles.quoteContainer}>
+          <View style={styles.quoteHeader}>
+            <Text style={styles.quoteHeaderTitle}>Wellness Whispers</Text>
+            <Text style={styles.quoteHeaderSubtitle}>Your daily dose of inspiration</Text>
+          </View>
+          <View style={styles.quoteContent}>
+            <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
+            <View style={styles.quoteAuthorContainer}>
+              <View style={styles.quoteLine} />
+              <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.streakContainer}>
           <Animated.View 
             style={[
@@ -299,16 +313,6 @@ export default function HomeScreen() {
           <View style={styles.streakTextContainer}>
             <Text style={styles.streakCount}>{streak} Day{streak !== 1 ? 's' : ''}</Text>
             <Text style={styles.streakMessage}>{getStreakMessage()}</Text>
-          </View>
-        </View>
-
-        <View style={styles.quoteContainer}>
-          <View style={styles.quoteContent}>
-            <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
-            <View style={styles.quoteAuthorContainer}>
-              <View style={styles.quoteLine} />
-              <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
-            </View>
           </View>
         </View>
 
@@ -469,11 +473,28 @@ const styles = StyleSheet.create({
   quoteContainer: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
-    padding: SIZES.padding,
+    padding: CONTAINER_PADDING,
     marginBottom: SIZES.padding,
     ...SHADOWS.small,
     borderLeftWidth: 3,
     borderLeftColor: COLORS.primary + '40',
+  },
+  quoteHeader: {
+    marginBottom: SIZES.padding * 0.5,
+  },
+  quoteHeaderTitle: {
+    ...FONTS.h3,
+    color: '#fb923c',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  quoteHeaderSubtitle: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 2,
+    fontSize: 11,
   },
   quoteIconContainer: {
     position: 'absolute',
@@ -485,7 +506,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.small,
   },
   quoteContent: {
-    paddingTop: SIZES.base,
+    paddingTop: 0,
   },
   quoteText: {
     ...FONTS.body1,
@@ -560,7 +581,7 @@ const styles = StyleSheet.create({
   },
   weeklyFeelsTitle: {
     ...FONTS.h3,
-    color: COLORS.primary,
+    color: '#fb923c',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',

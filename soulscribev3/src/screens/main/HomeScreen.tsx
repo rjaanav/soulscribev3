@@ -465,6 +465,9 @@ const styles = StyleSheet.create({
     ...FONTS.largeTitle,
     color: COLORS.primary,
     fontWeight: 'bold',
+    textShadowColor: 'black',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
   },
   logo: {
     width: 60,

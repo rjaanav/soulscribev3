@@ -42,6 +42,7 @@ export default function BrainDumpScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [rawTranscription, setRawTranscription] = useState('');
   const [mood, setMood] = useState('');
+  const [moodScore, setMoodScore] = useState<number>(0);
   const [sentiment, setSentiment] = useState('');
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -302,6 +303,7 @@ export default function BrainDumpScreen() {
 {
   "entry": "the enhanced journal entry (start with Dear Journal)",
   "mood": "a single word describing the primary mood (e.g., happy, sad, anxious, excited)",
+  "moodScore": "a number between -1 and 1 representing the mood's positivity/negativity (-1 being extremely negative, 0 being neutral, 1 being extremely positive)",
   "sentiment": "a brief phrase describing the emotional sentiment (e.g., very positive, slightly negative)"
 }`
         }, {
@@ -337,6 +339,7 @@ export default function BrainDumpScreen() {
       try {
         const parsedResponse = JSON.parse(data.choices[0].message.content);
         setMood(parsedResponse.mood);
+        setMoodScore(Number(parsedResponse.moodScore));
         setSentiment(parsedResponse.sentiment);
         return parsedResponse.entry;
       } catch (parseError) {
@@ -400,6 +403,7 @@ export default function BrainDumpScreen() {
         userId: auth.currentUser.uid,
         content: transcription,
         mood: mood,
+        moodScore: moodScore,
         sentiment: sentiment,
         createdAt: new Date().toISOString(),
       });
@@ -407,6 +411,7 @@ export default function BrainDumpScreen() {
       Alert.alert('Success', 'Journal entry saved successfully');
       setTranscription('');
       setMood('');
+      setMoodScore(0);
       setSentiment('');
     } catch (err) {
       Alert.alert('Error', 'Failed to save journal entry');

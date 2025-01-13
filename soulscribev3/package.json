@@ -22,6 +22,7 @@
     "expo-av": "^15.0.1",
     "expo-constants": "^17.0.3",
     "expo-file-system": "^18.0.6",
+    "expo-haptics": "^14.0.1",
     "expo-linear-gradient": "~14.0.2",
     "expo-linking": "^7.0.3",
     "expo-status-bar": "~2.0.0",
@@ -35,7 +36,8 @@
     "react-native-reanimated": "^3.16.7",
     "react-native-safe-area-context": "^5.0.0",
     "react-native-screens": "^4.4.0",
-    "styled-components": "^6.1.14"
+    "styled-components": "^6.1.14",
+    "expo-blur": "~14.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

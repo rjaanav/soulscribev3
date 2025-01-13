@@ -181,6 +181,7 @@ export default function VaultScreen() {
           renderItem={renderEntry}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.entriesList}
+          showsVerticalScrollIndicator={true}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No entries for this month</Text>
@@ -255,11 +256,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.padding,
+    paddingTop: SIZES.padding,
   },
   header: {
     marginBottom: SIZES.padding,
+    paddingHorizontal: SIZES.padding,
   },
   title: {
     ...FONTS.h1,
@@ -272,6 +273,7 @@ const styles = StyleSheet.create({
   },
   dateSelector: {
     marginBottom: SIZES.padding,
+    paddingHorizontal: SIZES.padding,
   },
   yearSelector: {
     flexDirection: 'row',
@@ -312,13 +314,15 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   entriesList: {
-    paddingBottom: SIZES.padding,
+    paddingHorizontal: SIZES.padding,
+    paddingBottom: SIZES.padding * 4,
   },
   entryCard: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
     padding: SIZES.padding,
     marginBottom: SIZES.padding,
+    width: '100%',
     ...SHADOWS.small,
   },
   entryDate: {

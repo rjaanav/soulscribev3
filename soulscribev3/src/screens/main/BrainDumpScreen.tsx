@@ -31,6 +31,8 @@ export default function BrainDumpScreen() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [rawTranscription, setRawTranscription] = useState('');
+  const [mood, setMood] = useState('');
+  const [sentiment, setSentiment] = useState('');
 
   // Replace with your API Keys
   
@@ -102,7 +104,19 @@ export default function BrainDumpScreen() {
         model: "gpt-3.5-turbo",
         messages: [{
           role: "system",
-          content: "You are a professional journal editor. Your task is to:\n1. Fix any grammatical errors\n2. Remove unnecessary words\n3. Structure the text into a proper journal entry\n4. Make it look professional\n5.Maintain the original meaning and personal tone of the journal entry.\n6. I want your response to include just the newly structured journal entry, and start every journal with Dear Journal"
+          content: `You are a professional journal editor and emotional analyst. Your task is to:
+1. Fix any grammatical errors
+2. Remove unnecessary words
+3. Structure the text into a proper journal entry
+4. Make it look professional
+5. Maintain the original meaning and personal tone of the journal entry
+6. Analyze the mood and sentiment of the entry
+7. Return a JSON object with the following structure:
+{
+  "entry": "the enhanced journal entry (start with Dear Journal)",
+  "mood": "a single word describing the primary mood (e.g., happy, sad, anxious, excited)",
+  "sentiment": "a brief phrase describing the emotional sentiment (e.g., very positive, slightly negative)"
+}`
         }, {
           role: "user",
           content: text
@@ -133,7 +147,15 @@ export default function BrainDumpScreen() {
         throw new Error('Invalid response format from OpenAI');
       }
 
-      return data.choices[0].message.content;
+      try {
+        const parsedResponse = JSON.parse(data.choices[0].message.content);
+        setMood(parsedResponse.mood);
+        setSentiment(parsedResponse.sentiment);
+        return parsedResponse.entry;
+      } catch (parseError) {
+        console.error('Error parsing GPT response:', parseError);
+        return data.choices[0].message.content;
+      }
     } catch (error) {
       console.error('GPT Processing error:', error);
       Alert.alert('AI Enhancement Failed', 'Using original transcription instead');
@@ -190,11 +212,15 @@ export default function BrainDumpScreen() {
       await addDoc(collection(db, 'journals'), {
         userId: auth.currentUser.uid,
         content: transcription,
+        mood: mood,
+        sentiment: sentiment,
         createdAt: new Date().toISOString(),
       });
 
       Alert.alert('Success', 'Journal entry saved successfully');
       setTranscription('');
+      setMood('');
+      setSentiment('');
     } catch (err) {
       Alert.alert('Error', 'Failed to save journal entry');
       console.error(err);
@@ -259,6 +285,35 @@ export default function BrainDumpScreen() {
                     placeholder="Your enhanced journal entry will appear here..."
                     placeholderTextColor={COLORS.textSecondary}
                   />
+                  {mood && sentiment && (
+                    <View style={styles.analysisContainer}>
+                      <View style={styles.analysisHeader}>
+                        <Text style={styles.analysisTitle}>Emotional Analysis</Text>
+                        <Ionicons name="heart" size={20} color={COLORS.primary} />
+                      </View>
+                      <View style={styles.analysisDivider} />
+                      <View style={styles.analysisContent}>
+                        <View style={styles.analysisItem}>
+                          <View style={styles.analysisIconContainer}>
+                            <Ionicons name="happy" size={24} color={COLORS.primary} />
+                          </View>
+                          <View style={styles.analysisTextContainer}>
+                            <Text style={styles.analysisLabel}>Mood</Text>
+                            <Text style={styles.analysisValue}>{mood}</Text>
+                          </View>
+                        </View>
+                        <View style={[styles.analysisItem, styles.analysisItemBorder]}>
+                          <View style={styles.analysisIconContainer}>
+                            <Ionicons name="pulse" size={24} color={COLORS.primary} />
+                          </View>
+                          <View style={styles.analysisTextContainer}>
+                            <Text style={styles.analysisLabel}>Sentiment</Text>
+                            <Text style={styles.analysisValue}>{sentiment}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
                   {rawTranscription && (
                     <>
                       <Text style={styles.rawTranscriptionTitle}>Original Transcription</Text>
@@ -409,5 +464,65 @@ const styles = StyleSheet.create({
     ...FONTS.body2,
     color: COLORS.textSecondary,
     fontStyle: 'italic',
+  },
+  analysisContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding,
+    marginTop: SIZES.base,
+    marginBottom: SIZES.padding,
+    ...SHADOWS.medium,
+  },
+  analysisHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.base,
+  },
+  analysisTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  analysisDivider: {
+    height: 1,
+    backgroundColor: COLORS.primary + '20',
+    marginVertical: SIZES.base,
+  },
+  analysisContent: {
+    marginTop: SIZES.base,
+  },
+  analysisItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SIZES.base,
+  },
+  analysisItemBorder: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.primary + '20',
+    marginTop: SIZES.base,
+    paddingTop: SIZES.padding,
+  },
+  analysisIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SIZES.padding,
+  },
+  analysisTextContainer: {
+    flex: 1,
+  },
+  analysisLabel: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    marginBottom: 2,
+  },
+  analysisValue: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    textTransform: 'capitalize',
   },
 });

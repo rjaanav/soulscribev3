@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -11,7 +11,9 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Dimensions,
+  Animated
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -23,6 +25,13 @@ import {
   DEEPGRAM_API_KEY, 
   OPENAI_API_KEY
 } from '@env';
+
+type Tip = {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  text: string;
+};
+
 export default function BrainDumpScreen() {
   const insets = useSafeAreaInsets();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -33,9 +42,76 @@ export default function BrainDumpScreen() {
   const [rawTranscription, setRawTranscription] = useState('');
   const [mood, setMood] = useState('');
   const [sentiment, setSentiment] = useState('');
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const breatheAnim = useRef(new Animated.Value(1)).current;
 
-  // Replace with your API Keys
-  
+  const tips: Tip[] = [
+    {
+      icon: 'volume-mute',
+      title: 'Find a Quiet Spot',
+      text: 'Record in a calm area to minimize background noise.'
+    },
+    {
+      icon: 'mic-outline',
+      title: 'Speak Clearly & Steadily',
+      text: 'Articulate each word and keep a steady pace.'
+    },
+    {
+      icon: 'phone-portrait-outline',
+      title: 'Hold Phone Steady & Near',
+      text: 'Keep the mic close (but not too close) for clear audio.'
+    },
+    {
+      icon: 'timer-outline',
+      title: 'Avoid Interruptions',
+      text: 'Pause briefly before and after speaking.'
+    },
+    {
+      icon: 'eye-outline',
+      title: 'Check Preview',
+      text: 'Review the short transcript; re-record if needed.'
+    }
+  ];
+
+  // Smooth transition for tips
+  useEffect(() => {
+    if (!transcription) {
+      const interval = setInterval(() => {
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            })
+          ]),
+          Animated.sequence([
+            Animated.timing(slideAnim, {
+              toValue: -30,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+              toValue: 0,
+              duration: 400,
+              useNativeDriver: true,
+            })
+          ])
+        ]).start();
+
+        setCurrentTipIndex((prev) => (prev + 1) % tips.length);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [transcription]);
 
   // Cleanup the recorder when component unmounts
   useEffect(() => {
@@ -45,6 +121,28 @@ export default function BrainDumpScreen() {
       }
     };
   }, [recording]);
+
+  // Breathing animation for record button
+  useEffect(() => {
+    if (!transcription && !isRecording) {
+      const breathe = Animated.sequence([
+        Animated.timing(breatheAnim, {
+          toValue: 1.1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(breatheAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        })
+      ]);
+
+      Animated.loop(breathe).start();
+    } else {
+      breatheAnim.setValue(1);
+    }
+  }, [transcription, isRecording]);
 
   // --- Start Recording ---
   async function startRecording() {
@@ -268,21 +366,70 @@ export default function BrainDumpScreen() {
               </View>
 
               {!transcription && (
-                <View style={styles.recordingContainer}>
-                  <TouchableOpacity
-                    style={[styles.recordButton, isRecording && styles.recordingActive]}
-                    onPress={isRecording ? stopRecording : startRecording}
+                <>
+                  <View style={styles.recordingContainer}>
+                    <Animated.View style={{
+                      transform: [{ scale: breatheAnim }]
+                    }}>
+                      <TouchableOpacity
+                        style={[styles.recordButton, isRecording && styles.recordingActive]}
+                        onPress={isRecording ? stopRecording : startRecording}
+                      >
+                        <Ionicons
+                          name={isRecording ? 'stop' : 'mic'}
+                          size={32}
+                          color={COLORS.white}
+                        />
+                      </TouchableOpacity>
+                    </Animated.View>
+                    <Text style={styles.recordingText}>
+                      {isRecording ? 'Tap to stop' : 'Tap to record'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.guideHeaderContainer}>
+                    <Text style={styles.guideHeaderTitle}>Guidelines</Text>
+                    <View style={styles.guideHeaderDivider} />
+                    <Text style={styles.guideHeaderSubtitle}>Follow these tips for optimal quality</Text>
+                  </View>
+
+                  <Animated.View 
+                    style={[
+                      styles.tipContainer,
+                      {
+                        opacity: fadeAnim,
+                        transform: [{
+                          translateX: slideAnim
+                        }]
+                      }
+                    ]}
                   >
-                    <Ionicons
-                      name={isRecording ? 'stop' : 'mic'}
-                      size={32}
-                      color={COLORS.white}
-                    />
-                  </TouchableOpacity>
-                  <Text style={styles.recordingText}>
-                    {isRecording ? 'Tap to stop' : 'Tap to record'}
-                  </Text>
-                </View>
+                    <View style={styles.tipContent}>
+                      <View style={styles.tipIconContainer}>
+                        <Ionicons 
+                          name={tips[currentTipIndex].icon} 
+                          size={28} 
+                          color={COLORS.primary} 
+                        />
+                      </View>
+                      <View style={styles.tipTextContainer}>
+                        <Text style={styles.tipTitle}>{tips[currentTipIndex].title}</Text>
+                        <Text style={styles.tipText}>{tips[currentTipIndex].text}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.dotsContainer}>
+                      {tips.map((_, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            styles.dot,
+                            index === currentTipIndex && styles.activeDot
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </Animated.View>
+                </>
               )}
 
               {(isTranscribing || isProcessing) && (
@@ -411,7 +558,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    marginBottom: SIZES.padding * 2,
+    marginBottom: SIZES.padding,
   },
   title: {
     ...FONTS.h1,
@@ -424,7 +571,8 @@ const styles = StyleSheet.create({
   },
   recordingContainer: {
     alignItems: 'center',
-    marginVertical: SIZES.padding * 2,
+    marginBottom: SIZES.padding * 3,
+    marginTop: SIZES.padding * 2,
   },
   recordButton: {
     width: 80,
@@ -457,7 +605,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
     padding: SIZES.padding,
-    marginTop: SIZES.padding,
+    marginTop: SIZES.padding * -0.1,
     ...SHADOWS.small,
   },
   transcriptionTitle: {
@@ -571,5 +719,126 @@ const styles = StyleSheet.create({
     ...FONTS.h3,
     color: COLORS.text,
     textTransform: 'capitalize',
+  },
+  guideContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding * 1.5,
+    marginTop: SIZES.padding,
+    marginBottom: SIZES.padding * 2,
+    ...SHADOWS.medium,
+  },
+  guideTitle: {
+    ...FONTS.h2,
+    color: COLORS.text,
+    fontWeight: 'bold',
+    marginBottom: SIZES.padding * 1.5,
+    textAlign: 'center',
+  },
+  guideTipContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SIZES.padding,
+    backgroundColor: COLORS.background,
+    padding: SIZES.padding,
+    borderRadius: SIZES.radius,
+    ...SHADOWS.small,
+  },
+  guideTipIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SIZES.padding,
+  },
+  guideTipContent: {
+    flex: 1,
+  },
+  guideTipTitle: {
+    ...FONTS.h4,
+    color: COLORS.text,
+    marginBottom: 4,
+    fontWeight: '600',
+  },
+  guideTipText: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+  },
+  tipContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding,
+    marginHorizontal: SIZES.padding,
+    marginBottom: SIZES.padding * 3,
+    ...SHADOWS.medium,
+  },
+  tipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 80,
+  },
+  tipIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SIZES.padding,
+  },
+  tipTextContainer: {
+    flex: 1,
+  },
+  tipTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: 4,
+    fontWeight: '600',
+  },
+  tipText: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SIZES.padding,
+    gap: SIZES.base,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary + '30',
+  },
+  activeDot: {
+    backgroundColor: COLORS.primary,
+    transform: [{ scale: 1.2 }],
+  },
+  guideHeaderContainer: {
+    alignItems: 'center',
+    marginBottom: SIZES.padding * 1.5,
+    marginTop: SIZES.padding,
+  },
+  guideHeaderTitle: {
+    ...FONTS.h2,
+    color: COLORS.text,
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  guideHeaderDivider: {
+    width: 40,
+    height: 2,
+    backgroundColor: COLORS.primary,
+    marginVertical: SIZES.base,
+  },
+  guideHeaderSubtitle: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });

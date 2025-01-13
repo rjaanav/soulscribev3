@@ -13,7 +13,7 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { addDoc, collection } from 'firebase/firestore';
@@ -24,6 +24,7 @@ import {
   OPENAI_API_KEY
 } from '@env';
 export default function BrainDumpScreen() {
+  const insets = useSafeAreaInsets();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState('');
@@ -101,7 +102,7 @@ export default function BrainDumpScreen() {
         model: "gpt-3.5-turbo",
         messages: [{
           role: "system",
-          content: "You are a professional journal editor. Your task is to:\n1. Fix any grammatical errors\n2. Remove unnecessary words\n3. Structure the text into a proper journal entry\n4. Make it look professional\nMaintain the original meaning and personal tone of the journal entry."
+          content: "You are a professional journal editor. Your task is to:\n1. Fix any grammatical errors\n2. Remove unnecessary words\n3. Structure the text into a proper journal entry\n4. Make it look professional\n5.Maintain the original meaning and personal tone of the journal entry.\n6. I want your response to include just the newly structured journal entry, and start every journal with Dear Journal"
         }, {
           role: "user",
           content: text
@@ -205,80 +206,90 @@ export default function BrainDumpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <SafeAreaView style={styles.container}>
-          <ScrollView style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Brain Dump</Text>
-              <Text style={styles.subtitle}>Record your thoughts</Text>
-            </View>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: insets.bottom + 100 }
+          ]}
+          showsVerticalScrollIndicator={true}
+          bounces={true}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.header}>
+                <Text style={styles.title}>Brain Dump</Text>
+                <Text style={styles.subtitle}>Record your thoughts</Text>
+              </View>
 
-            <View style={styles.recordingContainer}>
-              <TouchableOpacity
-                style={[styles.recordButton, isRecording && styles.recordingActive]}
-                onPress={isRecording ? stopRecording : startRecording}
-              >
-                <Ionicons
-                  name={isRecording ? 'stop' : 'mic'}
-                  size={32}
-                  color={COLORS.white}
-                />
-              </TouchableOpacity>
-              <Text style={styles.recordingText}>
-                {isRecording ? 'Tap to stop' : 'Tap to record'}
-              </Text>
-            </View>
-
-            {(isTranscribing || isProcessing) && (
-              <View style={styles.transcribingContainer}>
-                <ActivityIndicator color={COLORS.primary} />
-                <Text style={styles.transcribingText}>
-                  {isTranscribing ? 'Transcribing...' : 'Enhancing with AI...'}
+              <View style={styles.recordingContainer}>
+                <TouchableOpacity
+                  style={[styles.recordButton, isRecording && styles.recordingActive]}
+                  onPress={isRecording ? stopRecording : startRecording}
+                >
+                  <Ionicons
+                    name={isRecording ? 'stop' : 'mic'}
+                    size={32}
+                    color={COLORS.white}
+                  />
+                </TouchableOpacity>
+                <Text style={styles.recordingText}>
+                  {isRecording ? 'Tap to stop' : 'Tap to record'}
                 </Text>
               </View>
-            )}
 
-            {transcription && (
-              <View style={styles.transcriptionContainer}>
-                <Text style={styles.transcriptionTitle}>Enhanced Journal Entry</Text>
-                <TextInput
-                  style={styles.transcriptionInput}
-                  value={transcription}
-                  onChangeText={setTranscription}
-                  multiline
-                  placeholder="Your enhanced journal entry will appear here..."
-                  placeholderTextColor={COLORS.textSecondary}
-                />
-                {rawTranscription && (
-                  <>
-                    <Text style={styles.rawTranscriptionTitle}>Original Transcription</Text>
-                    <Text style={styles.rawTranscriptionText}>{rawTranscription}</Text>
-                  </>
-                )}
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.button, styles.discardButton]}
-                    onPress={() => {
-                      setTranscription('');
-                      setRawTranscription('');
-                    }}
-                  >
-                    <Text style={styles.buttonText}>Discard</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.saveButton]}
-                    onPress={saveJournal}
-                  >
-                    <Text style={[styles.buttonText, styles.saveButtonText]}>
-                      Save to Vault
-                    </Text>
-                  </TouchableOpacity>
+              {(isTranscribing || isProcessing) && (
+                <View style={styles.transcribingContainer}>
+                  <ActivityIndicator color={COLORS.primary} />
+                  <Text style={styles.transcribingText}>
+                    {isTranscribing ? 'Transcribing...' : 'Enhancing with AI...'}
+                  </Text>
                 </View>
-              </View>
-            )}
-          </ScrollView>
-        </SafeAreaView>
-      </TouchableWithoutFeedback>
+              )}
+
+              {transcription && (
+                <View style={styles.transcriptionContainer}>
+                  <Text style={styles.transcriptionTitle}>Enhanced Journal Entry</Text>
+                  <TextInput
+                    style={styles.transcriptionInput}
+                    value={transcription}
+                    onChangeText={setTranscription}
+                    multiline
+                    placeholder="Your enhanced journal entry will appear here..."
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                  {rawTranscription && (
+                    <>
+                      <Text style={styles.rawTranscriptionTitle}>Original Transcription</Text>
+                      <Text style={styles.rawTranscriptionText}>{rawTranscription}</Text>
+                    </>
+                  )}
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.button, styles.discardButton]}
+                      onPress={() => {
+                        setTranscription('');
+                        setRawTranscription('');
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Discard</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.button, styles.saveButton]}
+                      onPress={saveJournal}
+                    >
+                      <Text style={[styles.buttonText, styles.saveButtonText]}>
+                        Save to Vault
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   );
 }
@@ -292,7 +303,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.padding,
+  },
+  contentContainer: {
+    paddingTop: SIZES.padding,
+    flexGrow: 1,
   },
   header: {
     marginBottom: SIZES.padding * 2,

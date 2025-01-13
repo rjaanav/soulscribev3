@@ -267,21 +267,23 @@ export default function BrainDumpScreen() {
                 <Text style={styles.subtitle}>Record your thoughts</Text>
               </View>
 
-              <View style={styles.recordingContainer}>
-                <TouchableOpacity
-                  style={[styles.recordButton, isRecording && styles.recordingActive]}
-                  onPress={isRecording ? stopRecording : startRecording}
-                >
-                  <Ionicons
-                    name={isRecording ? 'stop' : 'mic'}
-                    size={32}
-                    color={COLORS.white}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.recordingText}>
-                  {isRecording ? 'Tap to stop' : 'Tap to record'}
-                </Text>
-              </View>
+              {!transcription && (
+                <View style={styles.recordingContainer}>
+                  <TouchableOpacity
+                    style={[styles.recordButton, isRecording && styles.recordingActive]}
+                    onPress={isRecording ? stopRecording : startRecording}
+                  >
+                    <Ionicons
+                      name={isRecording ? 'stop' : 'mic'}
+                      size={32}
+                      color={COLORS.white}
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.recordingText}>
+                    {isRecording ? 'Tap to stop' : 'Tap to record'}
+                  </Text>
+                </View>
+              )}
 
               {(isTranscribing || isProcessing) && (
                 <View style={styles.transcribingContainer}>

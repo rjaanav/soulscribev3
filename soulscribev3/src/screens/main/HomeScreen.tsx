@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
+import { quotes } from '../../data/quotes';
 
 export default function HomeScreen() {
+  // Get daily quote using the current date as seed
+  const dailyQuote = useMemo(() => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+    const quoteIndex = dayOfYear % quotes.length;
+    return quotes[quoteIndex];
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -17,6 +26,11 @@ export default function HomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
+        </View>
+
+        <View style={styles.quoteContainer}>
+          <Text style={styles.quoteText}>"{dailyQuote.text}"</Text>
+          <Text style={styles.quoteAuthor}>— {dailyQuote.author}</Text>
         </View>
 
         <View style={styles.messageContainer}>
@@ -69,5 +83,24 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 28,
+  },
+  quoteContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding * 1.5,
+    marginVertical: SIZES.padding,
+    ...SHADOWS.small,
+  },
+  quoteText: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    fontStyle: 'italic',
+    marginBottom: SIZES.base,
+    lineHeight: 24,
+  },
+  quoteAuthor: {
+    ...FONTS.body2,
+    color: COLORS.primary,
+    textAlign: 'right',
   },
 }); 

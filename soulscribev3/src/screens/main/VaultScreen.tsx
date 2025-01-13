@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,6 +107,42 @@ export default function VaultScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!editingEntry) return;
+
+    Alert.alert(
+      'Delete Journal Entry',
+      'Are you sure you want to delete this journal entry? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              const entryRef = doc(db, 'journals', editingEntry.id);
+              await deleteDoc(entryRef);
+
+              // Update local state
+              setEntries(entries.filter(entry => entry.id !== editingEntry.id));
+              setEditingEntry(null);
+              Alert.alert('Success', 'Journal entry deleted successfully');
+            } catch (error) {
+              console.error('Error deleting entry:', error);
+              Alert.alert('Error', 'Failed to delete journal entry');
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Function to get mood emoji
@@ -261,22 +297,30 @@ export default function VaultScreen() {
 
                 <View style={styles.modalActions}>
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setEditingEntry(null)}
+                    style={[styles.modalButton, styles.deleteButton]}
+                    onPress={handleDeleteEntry}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Ionicons name="trash-outline" size={24} color={COLORS.error} />
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.saveButton]}
-                    onPress={handleSaveEdit}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color={COLORS.white} />
-                    ) : (
-                      <Text style={styles.saveButtonText}>Save Changes</Text>
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.cancelButton]}
+                      onPress={() => setEditingEntry(null)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.saveButton]}
+                      onPress={handleSaveEdit}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator color={COLORS.white} />
+                      ) : (
+                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </KeyboardAvoidingView>
@@ -442,14 +486,27 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.padding,
+    marginTop: SIZES.padding,
+  },
+  actionButtons: {
+    flex: 1,
+    flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: SIZES.padding,
   },
   modalButton: {
-    paddingVertical: SIZES.padding,
-    paddingHorizontal: SIZES.padding * 2,
+    paddingVertical: SIZES.base * 1.5,
+    paddingHorizontal: SIZES.padding,
     borderRadius: SIZES.radius,
     ...SHADOWS.small,
+  },
+  deleteButton: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.error + '30',
+    padding: SIZES.base,
   },
   cancelButton: {
     backgroundColor: COLORS.surface,

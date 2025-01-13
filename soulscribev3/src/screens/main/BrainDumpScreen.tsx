@@ -47,6 +47,7 @@ export default function BrainDumpScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const breatheAnim = useRef(new Animated.Value(1)).current;
+  const loadingPulse = useRef(new Animated.Value(1)).current;
 
   const tips: Tip[] = [
     {
@@ -209,6 +210,28 @@ export default function BrainDumpScreen() {
       breatheAnim.setValue(1);
     }
   }, [transcription, isRecording]);
+
+  // Add loading animation effect
+  useEffect(() => {
+    if (isTranscribing || isProcessing) {
+      const pulse = Animated.sequence([
+        Animated.timing(loadingPulse, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(loadingPulse, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ]);
+
+      Animated.loop(pulse).start();
+    } else {
+      loadingPulse.setValue(1);
+    }
+  }, [isTranscribing, isProcessing]);
 
   // --- Start Recording ---
   async function startRecording() {
@@ -443,78 +466,124 @@ export default function BrainDumpScreen() {
               {!transcription && (
                 <>
                   <View style={styles.recordingContainer}>
-                    <Animated.View style={{
-                      transform: [{ scale: breatheAnim }]
-                    }}>
-                      <TouchableOpacity
-                        style={[styles.recordButton, isRecording && styles.recordingActive]}
-                        onPress={isRecording ? stopRecording : startRecording}
+                    {(isTranscribing || isProcessing) ? (
+                      <>
+                        <Animated.View style={[
+                          styles.loadingIconContainer,
+                          {
+                            transform: [{ scale: loadingPulse }]
+                          }
+                        ]}>
+                          <Ionicons 
+                            name={isTranscribing ? "radio" : "sparkles"} 
+                            size={32} 
+                            color={COLORS.primary} 
+                          />
+                        </Animated.View>
+                        <Text style={styles.loadingTitle}>
+                          {isTranscribing ? 'Sprinkling Magic' : 'Enhancing Your Thoughts'}
+                        </Text>
+                        <Text style={styles.loadingSubtitle}>
+                          {isTranscribing 
+                            ? 'Your words are being transcribed...' 
+                            : 'Adding structure and clarity...'}
+                        </Text>
+                        <View style={styles.loadingProgress}>
+                          <View style={styles.loadingDots}>
+                            {[...Array(3)].map((_, i) => (
+                              <Animated.View 
+                                key={i}
+                                style={[
+                                  styles.loadingDot,
+                                  {
+                                    opacity: loadingPulse.interpolate({
+                                      inputRange: [1, 1.2],
+                                      outputRange: [0.3, 1]
+                                    }),
+                                    transform: [{
+                                      scale: loadingPulse.interpolate({
+                                        inputRange: [1, 1.2],
+                                        outputRange: [1, 1 + (i * 0.2)]
+                                      })
+                                    }]
+                                  }
+                                ]}
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Animated.View style={{
+                          transform: [{ scale: breatheAnim }]
+                        }}>
+                          <TouchableOpacity
+                            style={[styles.recordButton, isRecording && styles.recordingActive]}
+                            onPress={isRecording ? stopRecording : startRecording}
+                          >
+                            <Ionicons
+                              name={isRecording ? 'stop' : 'mic'}
+                              size={32}
+                              color={COLORS.white}
+                            />
+                          </TouchableOpacity>
+                        </Animated.View>
+                        <Text style={styles.recordingText}>
+                          {isRecording ? 'Tap to stop' : 'Tap to record'}
+                        </Text>
+                      </>
+                    )}
+                  </View>
+
+                  {!isTranscribing && !isProcessing && (
+                    <>
+                      <View style={styles.guideHeaderContainer}>
+                        <Text style={styles.guideHeaderTitle}>Guidelines</Text>
+                        <View style={styles.guideHeaderDivider} />
+                        <Text style={styles.guideHeaderSubtitle}>Follow these tips for optimal quality</Text>
+                      </View>
+
+                      <Animated.View 
+                        {...panResponder.panHandlers}
+                        style={[
+                          styles.tipContainer,
+                          {
+                            opacity: fadeAnim,
+                            transform: [{
+                              translateX: slideAnim
+                            }]
+                          }
+                        ]}
                       >
-                        <Ionicons
-                          name={isRecording ? 'stop' : 'mic'}
-                          size={32}
-                          color={COLORS.white}
-                        />
-                      </TouchableOpacity>
-                    </Animated.View>
-                    <Text style={styles.recordingText}>
-                      {isRecording ? 'Tap to stop' : 'Tap to record'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.guideHeaderContainer}>
-                    <Text style={styles.guideHeaderTitle}>Guidelines</Text>
-                    <View style={styles.guideHeaderDivider} />
-                    <Text style={styles.guideHeaderSubtitle}>Follow these tips for optimal quality</Text>
-                  </View>
-
-                  <Animated.View 
-                    {...panResponder.panHandlers}
-                    style={[
-                      styles.tipContainer,
-                      {
-                        opacity: fadeAnim,
-                        transform: [{
-                          translateX: slideAnim
-                        }]
-                      }
-                    ]}
-                  >
-                    <View style={styles.tipContent}>
-                      <View style={styles.tipIconContainer}>
-                        <Ionicons 
-                          name={tips[currentTipIndex].icon} 
-                          size={28} 
-                          color={COLORS.primary} 
-                        />
-                      </View>
-                      <View style={styles.tipTextContainer}>
-                        <Text style={styles.tipTitle}>{tips[currentTipIndex].title}</Text>
-                        <Text style={styles.tipText}>{tips[currentTipIndex].text}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.dotsContainer}>
-                      {tips.map((_, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.dot,
-                            index === currentTipIndex && styles.activeDot
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </Animated.View>
+                        <View style={styles.tipContent}>
+                          <View style={styles.tipIconContainer}>
+                            <Ionicons 
+                              name={tips[currentTipIndex].icon} 
+                              size={28} 
+                              color={COLORS.primary} 
+                            />
+                          </View>
+                          <View style={styles.tipTextContainer}>
+                            <Text style={styles.tipTitle}>{tips[currentTipIndex].title}</Text>
+                            <Text style={styles.tipText}>{tips[currentTipIndex].text}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.dotsContainer}>
+                          {tips.map((_, index) => (
+                            <View
+                              key={index}
+                              style={[
+                                styles.dot,
+                                index === currentTipIndex && styles.activeDot
+                              ]}
+                            />
+                          ))}
+                        </View>
+                      </Animated.View>
+                    </>
+                  )}
                 </>
-              )}
-
-              {(isTranscribing || isProcessing) && (
-                <View style={styles.transcribingContainer}>
-                  <ActivityIndicator color={COLORS.primary} />
-                  <Text style={styles.transcribingText}>
-                    {isTranscribing ? 'Transcribing...' : 'Enhancing with AI...'}
-                  </Text>
-                </View>
               )}
 
               {transcription && (
@@ -916,5 +985,46 @@ const styles = StyleSheet.create({
     ...FONTS.body2,
     color: COLORS.textSecondary,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SIZES.padding,
+  },
+  loadingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.padding,
+    ...SHADOWS.medium,
+  },
+  loadingTitle: {
+    ...FONTS.h3,
+    color: COLORS.text,
+    marginBottom: SIZES.base,
+    textAlign: 'center',
+  },
+  loadingSubtitle: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: SIZES.padding,
+  },
+  loadingProgress: {
+    alignItems: 'center',
+    marginTop: SIZES.base,
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    gap: SIZES.base,
+  },
+  loadingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
   },
 });

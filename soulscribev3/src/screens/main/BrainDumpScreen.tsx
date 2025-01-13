@@ -227,6 +227,24 @@ export default function BrainDumpScreen() {
     }
   }
 
+  // Function to determine mood icon
+  const getMoodIcon = (mood: string) => {
+    const lowerMood = mood.toLowerCase();
+    
+    // Positive moods
+    if (lowerMood.match(/happy|joy|excited|great|wonderful|fantastic|good|positive|cheerful|delighted|pleased|content|grateful|optimistic|confident/)) {
+      return 'happy-outline';
+    }
+    
+    // Negative moods
+    if (lowerMood.match(/sad|angry|upset|frustrated|anxious|depressed|worried|stressed|tired|exhausted|disappointed|hurt|lonely|negative|fear/)) {
+      return 'sad-outline';
+    }
+    
+    // Neutral moods
+    return 'logo-tux';
+  };
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -294,12 +312,39 @@ export default function BrainDumpScreen() {
                       <View style={styles.analysisDivider} />
                       <View style={styles.analysisContent}>
                         <View style={styles.analysisItem}>
-                          <View style={styles.analysisIconContainer}>
-                            <Ionicons name="happy" size={24} color={COLORS.primary} />
+                          <View style={[
+                            styles.analysisIconContainer,
+                            {
+                              backgroundColor: mood.toLowerCase().match(/happy|joy|excited|great|wonderful|fantastic|good|positive|cheerful|delighted|pleased|content|grateful|optimistic|confident/)
+                                ? COLORS.primary + '15'
+                                : mood.toLowerCase().match(/sad|angry|upset|frustrated|anxious|depressed|worried|stressed|tired|exhausted|disappointed|hurt|lonely|negative|fear/)
+                                  ? COLORS.error + '15'
+                                  : COLORS.textSecondary + '15'
+                            }
+                          ]}>
+                            <Ionicons 
+                              name={getMoodIcon(mood)}
+                              size={24}
+                              color={mood.toLowerCase().match(/happy|joy|excited|great|wonderful|fantastic|good|positive|cheerful|delighted|pleased|content|grateful|optimistic|confident/)
+                                ? COLORS.primary
+                                : mood.toLowerCase().match(/sad|angry|upset|frustrated|anxious|depressed|worried|stressed|tired|exhausted|disappointed|hurt|lonely|negative|fear/)
+                                  ? COLORS.error
+                                  : COLORS.textSecondary
+                              }
+                            />
                           </View>
                           <View style={styles.analysisTextContainer}>
                             <Text style={styles.analysisLabel}>Mood</Text>
-                            <Text style={styles.analysisValue}>{mood}</Text>
+                            <Text style={[
+                              styles.analysisValue,
+                              {
+                                color: mood.toLowerCase().match(/happy|joy|excited|great|wonderful|fantastic|good|positive|cheerful|delighted|pleased|content|grateful|optimistic|confident/)
+                                  ? COLORS.primary
+                                  : mood.toLowerCase().match(/sad|angry|upset|frustrated|anxious|depressed|worried|stressed|tired|exhausted|disappointed|hurt|lonely|negative|fear/)
+                                    ? COLORS.error
+                                    : COLORS.text
+                              }
+                            ]}>{mood}</Text>
                           </View>
                         </View>
                         <View style={[styles.analysisItem, styles.analysisItemBorder]}>

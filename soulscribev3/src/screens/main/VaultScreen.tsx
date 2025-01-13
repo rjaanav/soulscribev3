@@ -25,6 +25,8 @@ interface JournalEntry {
   id: string;
   content: string;
   createdAt: string;
+  mood: string;
+  sentiment: string;
 }
 
 export default function VaultScreen() {
@@ -107,19 +109,55 @@ export default function VaultScreen() {
     }
   };
 
+  // Function to get mood emoji
+  const getMoodEmoji = (mood: string, sentiment: string) => {
+    const lowerMood = mood?.toLowerCase() || '';
+    const lowerSentiment = sentiment?.toLowerCase() || '';
+    
+    // Happy/Positive moods
+    if (lowerMood.match(/happy|joy|excited|great|wonderful|fantastic|good|positive|cheerful|delighted|pleased|content|grateful|optimistic|confident/)) {
+      if (lowerSentiment.includes('very positive')) return '🤗';
+      return '😊';
+    }
+    
+    // Negative moods
+    if (lowerMood.match(/sad|angry|upset|frustrated|anxious|depressed|worried|stressed|tired|exhausted|disappointed|hurt|lonely|negative|fear/)) {
+      if (lowerMood.match(/angry|frustrated/)) return '😤';
+      if (lowerMood.match(/anxious|worried|stressed/)) return '😰';
+      if (lowerMood.match(/depressed|sad|hurt|lonely/)) return '😢';
+      return '😔';
+    }
+    
+    // Neutral moods
+    if (lowerSentiment.includes('slightly positive')) return '🙂';
+    if (lowerSentiment.includes('slightly negative')) return '🙁';
+    return '😐';
+  };
+
   const renderEntry = ({ item }: { item: JournalEntry }) => (
     <TouchableOpacity 
       style={styles.entryCard}
       onPress={() => handleEditEntry(item)}
     >
-      <Text style={styles.entryDate}>
-        {format(new Date(item.createdAt), 'MMMM d, yyyy h:mm a')}
-      </Text>
+      <View style={styles.entryHeader}>
+        <Text style={styles.entryDate}>
+          {format(new Date(item.createdAt), 'MMMM d, yyyy h:mm a')}
+        </Text>
+      </View>
       <Text style={styles.entryContent} numberOfLines={3}>
         {item.content}
       </Text>
-      <View style={styles.editIconContainer}>
-        <Ionicons name="pencil" size={16} color={COLORS.primary} />
+      <View style={styles.cardFooter}>
+        <View style={styles.editIconContainer}>
+          <Ionicons name="pencil" size={16} color={COLORS.primary} />
+        </View>
+        {item.mood && (
+          <View style={styles.emojiContainer}>
+            <Text style={styles.emojiText}>
+              {getMoodEmoji(item.mood, item.sentiment || '')}
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -325,14 +363,37 @@ const styles = StyleSheet.create({
     width: '100%',
     ...SHADOWS.small,
   },
+  entryHeader: {
+    marginBottom: SIZES.base,
+  },
   entryDate: {
     ...FONTS.body2,
     color: COLORS.primary,
-    marginBottom: SIZES.base,
   },
   entryContent: {
     ...FONTS.body1,
     color: COLORS.text,
+    marginBottom: SIZES.padding,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  editIconContainer: {
+    padding: 4,
+  },
+  emojiContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  emojiText: {
+    fontSize: 20,
   },
   emptyContainer: {
     flex: 1,
@@ -343,11 +404,6 @@ const styles = StyleSheet.create({
   emptyText: {
     ...FONTS.body1,
     color: COLORS.textSecondary,
-  },
-  editIconContainer: {
-    position: 'absolute',
-    top: SIZES.padding,
-    right: SIZES.padding,
   },
   modalContainer: {
     flex: 1,

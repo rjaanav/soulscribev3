@@ -13,7 +13,8 @@ import {
   Platform,
   ScrollView,
   Dimensions,
-  Animated
+  Animated,
+  PanResponder
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -74,6 +75,71 @@ export default function BrainDumpScreen() {
       text: 'Review the short transcript; re-record if needed.'
     }
   ];
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only handle horizontal movements
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onPanResponderGrant: () => {
+        // Disable scroll when starting horizontal swipe
+        if (scrollViewRef.current) {
+          scrollViewRef.current.setNativeProps({ scrollEnabled: false });
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Re-enable scroll
+        if (scrollViewRef.current) {
+          scrollViewRef.current.setNativeProps({ scrollEnabled: true });
+        }
+
+        if (Math.abs(gestureState.dx) > 50) {
+          if (gestureState.dx > 0) {
+            setCurrentTipIndex((prev) => (prev - 1 + tips.length) % tips.length);
+          } else {
+            setCurrentTipIndex((prev) => (prev + 1) % tips.length);
+          }
+          
+          Animated.parallel([
+            Animated.sequence([
+              Animated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              })
+            ]),
+            Animated.sequence([
+              Animated.timing(slideAnim, {
+                toValue: gestureState.dx > 0 ? 30 : -30,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              })
+            ])
+          ]).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        // Re-enable scroll if pan responder terminates
+        if (scrollViewRef.current) {
+          scrollViewRef.current.setNativeProps({ scrollEnabled: true });
+        }
+      },
+    })
+  ).current;
+
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Smooth transition for tips
   useEffect(() => {
@@ -350,13 +416,22 @@ export default function BrainDumpScreen() {
     >
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <ScrollView 
+          ref={scrollViewRef}
           style={styles.content}
           contentContainerStyle={[
             styles.contentContainer,
-            { paddingBottom: insets.bottom + 100 }
+            !transcription && {
+              flex: 1,
+              justifyContent: 'flex-end',
+              paddingBottom: insets.bottom + 20
+            },
+            transcription && {
+              paddingBottom: insets.bottom + 100
+            }
           ]}
-          showsVerticalScrollIndicator={true}
-          bounces={true}
+          showsVerticalScrollIndicator={!!transcription}
+          bounces={!!transcription}
+          scrollEnabled={true}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={{ flex: 1 }}>
@@ -394,6 +469,7 @@ export default function BrainDumpScreen() {
                   </View>
 
                   <Animated.View 
+                    {...panResponder.panHandlers}
                     style={[
                       styles.tipContainer,
                       {

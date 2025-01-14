@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useFocusEffect } from '@react-navigation/native';
 
 const MOOD_KEYWORDS = {
   positive: ['happy', 'excited', 'grateful', 'amazing', 'wonderful', 'blessed', 'joy', 'love', 'peaceful'],
@@ -88,6 +89,84 @@ export default function HomeScreen() {
     const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
     return quotes[dayOfYear % quotes.length];
   }, []);
+
+  async function fetchWeeklyFeels() {
+    if (!auth.currentUser) return;
+
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 6); // Get last 7 days
+
+      const journalsRef = collection(db, 'journals');
+      const q = query(
+        journalsRef,
+        where('userId', '==', auth.currentUser.uid),
+        where('createdAt', '>=', startDate.toISOString()),
+        where('createdAt', '<=', endDate.toISOString()),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      
+      // Group entries by date, using the most recent entry for each day
+      const entriesByDate = new Map();
+      
+      querySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const entryDate = new Date(data.createdAt);
+        const dateKey = entryDate.toDateString();
+        
+        // Only store the first entry for each date (most recent due to desc order)
+        if (!entriesByDate.has(dateKey)) {
+          entriesByDate.set(dateKey, {
+            text: data.content || '',
+            createdAt: entryDate,
+            moodscore: data.moodScore || 0
+          });
+        }
+      });
+
+      // Create array for the last 7 days
+      const feels = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toDateString();
+        const entry = entriesByDate.get(dateKey);
+
+        return {
+          date,
+          mood: entry ? entry.moodscore : 0, // Use moodscore as the mood value
+          entry: entry?.text || '',
+          energyLevel: new Animated.Value(0)
+        };
+      }).reverse();
+
+      setWeeklyFeels(feels);
+
+      // Animate each circle sequentially
+      feels.forEach((feel, index) => {
+        Animated.sequence([
+          Animated.delay(index * 100),
+          Animated.spring(feel.energyLevel, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 3
+          })
+        ]).start();
+      });
+
+    } catch (error) {
+      console.error('Error fetching weekly feels:', error);
+    }
+  }
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchWeeklyFeels();
+    }, [])
+  );
 
   // Animate streak counter
   useEffect(() => {
@@ -171,82 +250,6 @@ export default function HomeScreen() {
     if (streak < 30) return "You're a journaling master! 👑";
     return "Legendary streak! 🌟";
   };
-
-  useEffect(() => {
-    async function fetchWeeklyFeels() {
-      if (!auth.currentUser) return;
-
-      try {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 6); // Get last 7 days
-
-        const journalsRef = collection(db, 'journals');
-        const q = query(
-          journalsRef,
-          where('userId', '==', auth.currentUser.uid),
-          where('createdAt', '>=', startDate.toISOString()),
-          where('createdAt', '<=', endDate.toISOString()),
-          orderBy('createdAt', 'desc')
-        );
-
-        const querySnapshot = await getDocs(q);
-        
-        // Group entries by date, using the most recent entry for each day
-        const entriesByDate = new Map();
-        
-        querySnapshot.docs.forEach(doc => {
-          const data = doc.data();
-          const entryDate = new Date(data.createdAt);
-          const dateKey = entryDate.toDateString();
-          
-          // Only store the first entry for each date (most recent due to desc order)
-          if (!entriesByDate.has(dateKey)) {
-            entriesByDate.set(dateKey, {
-              text: data.content || '',
-              createdAt: entryDate,
-              moodscore: data.moodScore || 0
-            });
-          }
-        });
-
-        // Create array for the last 7 days
-        const feels = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          const dateKey = date.toDateString();
-          const entry = entriesByDate.get(dateKey);
-
-          return {
-            date,
-            mood: entry ? entry.moodscore : 0, // Use moodscore as the mood value
-            entry: entry?.text || '',
-            energyLevel: new Animated.Value(0)
-          };
-        }).reverse();
-
-        setWeeklyFeels(feels);
-
-        // Animate each circle sequentially
-        feels.forEach((feel, index) => {
-          Animated.sequence([
-            Animated.delay(index * 100),
-            Animated.spring(feel.energyLevel, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 50,
-              friction: 3
-            })
-          ]).start();
-        });
-
-      } catch (error) {
-        console.error('Error fetching weekly feels:', error);
-      }
-    }
-
-    fetchWeeklyFeels();
-  }, []);
 
   const getWeeklyInsight = (feels: typeof weeklyFeels) => {
     if (feels.length === 0) return "Start journaling to see your emotional patterns.";

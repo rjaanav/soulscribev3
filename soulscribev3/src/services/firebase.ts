@@ -9,7 +9,6 @@ import {
 import { 
   getFirestore,
   initializeFirestore,
-  enableMultiTabIndexedDbPersistence,
   CACHE_SIZE_UNLIMITED
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';

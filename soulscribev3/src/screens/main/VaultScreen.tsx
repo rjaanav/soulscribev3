@@ -18,7 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { auth, db } from '../../services/firebase';
+import { auth, db, storage_helpers } from '../../services/firebase';
 import { format } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -46,6 +46,20 @@ export default function VaultScreen() {
     if (!auth.currentUser) return;
 
     try {
+      setIsLoading(true);
+      
+      // First, try to get cached entries
+      const cachedEntries = await storage_helpers.getCachedJournalEntries();
+      if (cachedEntries.length > 0) {
+        const filteredEntries = cachedEntries.filter((entry: JournalEntry) => {
+          const entryDate = new Date(entry.createdAt);
+          return entryDate.getFullYear() === selectedYear && 
+                 entryDate.getMonth() === selectedMonth;
+        });
+        setEntries(filteredEntries);
+      }
+
+      // Then fetch from Firestore
       const startDate = new Date(selectedYear, selectedMonth, 1);
       const endDate = new Date(selectedYear, selectedMonth + 1, 0);
 
@@ -68,8 +82,12 @@ export default function VaultScreen() {
       });
 
       setEntries(journalEntries);
+      // Cache the fetched entries
+      await storage_helpers.cacheJournalEntries(journalEntries);
     } catch (error) {
       console.error('Error fetching entries:', error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -94,11 +112,14 @@ export default function VaultScreen() {
       });
 
       // Update local state
-      setEntries(entries.map(entry => 
+      const updatedEntries = entries.map(entry => 
         entry.id === editingEntry.id 
           ? { ...entry, content: editedContent.trim() }
           : entry
-      ));
+      );
+      setEntries(updatedEntries);
+      // Update cache
+      await storage_helpers.cacheJournalEntries(updatedEntries);
 
       setEditingEntry(null);
       Alert.alert('Success', 'Journal entry updated successfully');
@@ -131,7 +152,11 @@ export default function VaultScreen() {
               await deleteDoc(entryRef);
 
               // Update local state
-              setEntries(entries.filter(entry => entry.id !== editingEntry.id));
+              const updatedEntries = entries.filter(entry => entry.id !== editingEntry.id);
+              setEntries(updatedEntries);
+              // Update cache
+              await storage_helpers.cacheJournalEntries(updatedEntries);
+
               setEditingEntry(null);
               Alert.alert('Success', 'Journal entry deleted successfully');
             } catch (error) {

@@ -5,7 +5,7 @@ import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../services/firebase';
+import { auth, db, storage_helpers } from '../../services/firebase';
 import { useNavigation } from '@react-navigation/native';
 
 interface UserProfile {
@@ -26,11 +26,21 @@ export default function ProfileScreen() {
     if (!auth.currentUser) return;
 
     try {
+      // First try to get profile from AsyncStorage
+      const cachedProfile = await storage_helpers.getUserProfile();
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+      }
+
+      // Then fetch from Firestore to ensure data is up to date
       const docRef = doc(db, 'users', auth.currentUser.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+        const profileData = docSnap.data() as UserProfile;
+        setProfile(profileData);
+        // Cache the updated profile
+        await storage_helpers.saveUserProfile(profileData);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -39,6 +49,7 @@ export default function ProfileScreen() {
 
   async function handleSignOut() {
     try {
+      await storage_helpers.clearStorage();
       await signOut(auth);
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out');

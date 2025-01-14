@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   quoteLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.primary,
     marginRight: SIZES.padding,
   },
   quoteAuthor: {

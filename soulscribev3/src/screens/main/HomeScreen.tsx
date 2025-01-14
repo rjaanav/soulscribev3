@@ -69,6 +69,28 @@ const getMoodColor = (moodScore: number) => {
   return '#FF0000'; // Pure red
 };
 
+// Helper function to get start and end of day
+const getStartAndEndOfDay = (date: Date) => {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+};
+
+// Helper function to normalize date to local midnight
+const normalizeDate = (date: Date) => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+// Helper function to get date key that ignores time
+const getDateKey = (date: Date) => {
+  const normalized = normalizeDate(date);
+  return `${normalized.getFullYear()}-${String(normalized.getMonth() + 1).padStart(2, '0')}-${String(normalized.getDate()).padStart(2, '0')}`;
+};
+
 export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [lastEntry, setLastEntry] = useState<string | null>(null);
@@ -94,8 +116,8 @@ export default function HomeScreen() {
     if (!auth.currentUser) return;
 
     try {
-      const endDate = new Date();
-      const startDate = new Date();
+      const today = new Date();
+      const { start: startDate, end: endDate } = getStartAndEndOfDay(today);
       startDate.setDate(startDate.getDate() - 6); // Get last 7 days
 
       const journalsRef = collection(db, 'journals');
@@ -115,7 +137,7 @@ export default function HomeScreen() {
       querySnapshot.docs.forEach(doc => {
         const data = doc.data();
         const entryDate = new Date(data.createdAt);
-        const dateKey = entryDate.toDateString();
+        const dateKey = getDateKey(entryDate);
         
         // Only store the first entry for each date (most recent due to desc order)
         if (!entriesByDate.has(dateKey)) {
@@ -129,14 +151,14 @@ export default function HomeScreen() {
 
       // Create array for the last 7 days
       const feels = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
+        const date = new Date(today);
         date.setDate(date.getDate() - i);
-        const dateKey = date.toDateString();
+        const dateKey = getDateKey(date);
         const entry = entriesByDate.get(dateKey);
 
         return {
           date,
-          mood: entry ? entry.moodscore : 0, // Use moodscore as the mood value
+          mood: entry ? entry.moodscore : 0,
           entry: entry?.text || '',
           energyLevel: new Animated.Value(0)
         };
@@ -164,7 +186,119 @@ export default function HomeScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchWeeklyFeels();
+      async function fetchDataAndCalculateStreak() {
+        if (!auth.currentUser) return;
+
+        try {
+          // First fetch the latest data
+          await fetchWeeklyFeels();
+
+          // Helper function to normalize date to local midnight
+          const normalizeDate = (date: Date) => {
+            const normalized = new Date(date);
+            normalized.setHours(0, 0, 0, 0);
+            return normalized;
+          };
+
+          // Helper function to get date key that ignores time
+          const getDateKey = (date: Date) => {
+            const normalized = normalizeDate(date);
+            return `${normalized.getFullYear()}-${String(normalized.getMonth() + 1).padStart(2, '0')}-${String(normalized.getDate()).padStart(2, '0')}`;
+          };
+
+          const today = new Date();
+          const { start: todayStart, end: todayEnd } = getStartAndEndOfDay(today);
+
+          // Start with last 30 days initially
+          let startDate = new Date(todayStart);
+          startDate.setDate(startDate.getDate() - 30);
+          let hasMoreEntries = true;
+          let allEntries = new Map();
+
+          // Keep fetching older entries in 30-day chunks until we find a gap
+          while (hasMoreEntries) {
+            const journalsRef = collection(db, 'journals');
+            const q = query(
+              journalsRef,
+              where('userId', '==', auth.currentUser.uid),
+              where('createdAt', '>=', startDate.toISOString()),
+              where('createdAt', '<=', todayEnd.toISOString()),
+              orderBy('createdAt', 'desc')
+            );
+
+            const querySnapshot = await getDocs(q);
+            const entries = querySnapshot.docs.map(doc => ({
+              createdAt: new Date(doc.data().createdAt)
+            }));
+
+            if (entries.length === 0) {
+              break;
+            }
+
+            // Group entries by normalized date
+            entries.forEach(entry => {
+              const dateKey = getDateKey(entry.createdAt);
+              if (!allEntries.has(dateKey)) {
+                allEntries.set(dateKey, entry.createdAt);
+              }
+            });
+
+            // Get oldest entry date in current batch
+            const oldestEntry = entries[entries.length - 1].createdAt;
+            
+            // Check if we need to look further back
+            let checkDate = new Date(oldestEntry);
+            checkDate.setDate(checkDate.getDate() - 1);
+            
+            // If we have a continuous streak up to the oldest entry, look further back
+            if (allEntries.has(getDateKey(checkDate))) {
+              startDate.setDate(startDate.getDate() - 30);
+            } else {
+              hasMoreEntries = false;
+            }
+          }
+
+          if (allEntries.size === 0) {
+            setStreak(0);
+            return;
+          }
+
+          let currentStreak = 0;
+          let checkDate = new Date(today);
+          
+          // Check if there's an entry today
+          const todayKey = getDateKey(checkDate);
+          const hasEntryToday = allEntries.has(todayKey);
+          
+          // If no entry today, check if there was one yesterday
+          if (!hasEntryToday) {
+            checkDate.setDate(checkDate.getDate() - 1);
+            const yesterdayKey = getDateKey(checkDate);
+            const hasEntryYesterday = allEntries.has(yesterdayKey);
+            
+            if (!hasEntryYesterday) {
+              setStreak(0);
+              return;
+            }
+          }
+
+          // Count consecutive days
+          const dates: string[] = [];
+          while (allEntries.has(getDateKey(checkDate))) {
+            currentStreak++;
+            dates.push(getDateKey(checkDate));
+            checkDate.setDate(checkDate.getDate() - 1);
+          }
+
+          setStreak(currentStreak);
+        } catch (error) {
+          console.error('Error calculating streak:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      fetchDataAndCalculateStreak();
     }, [])
   );
 
@@ -183,57 +317,6 @@ export default function HomeScreen() {
       }),
     ]).start();
   }, [streak]);
-
-  // Calculate streak
-  useEffect(() => {
-    async function calculateStreak() {
-      if (!auth.currentUser) return;
-
-      try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const journalsRef = collection(db, 'journals');
-        const q = query(
-          journalsRef,
-          where('userId', '==', auth.currentUser.uid),
-          where('createdAt', '>=', yesterday.toISOString()),
-          orderBy('createdAt', 'desc')
-        );
-
-        const querySnapshot = await getDocs(q);
-        const entries = querySnapshot.docs.map(doc => ({
-          createdAt: new Date(doc.data().createdAt),
-        }));
-
-        // Check if there's an entry today
-        const hasEntryToday = entries.some(entry => entry.createdAt >= today);
-        
-        // Check if there's an entry yesterday
-        const hasEntryYesterday = entries.some(
-          entry => entry.createdAt >= yesterday && entry.createdAt < today
-        );
-
-        // If no entry today and no entry yesterday, reset streak
-        if (!hasEntryToday && !hasEntryYesterday) {
-          setStreak(0);
-        } 
-        // If has entry today, maintain or increment streak
-        else if (hasEntryToday) {
-          setStreak(prev => prev + 1);
-        }
-        // Otherwise maintain current streak
-      } catch (error) {
-        console.error('Error calculating streak:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    calculateStreak();
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {

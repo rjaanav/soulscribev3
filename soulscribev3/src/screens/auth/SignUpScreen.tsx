@@ -143,7 +143,9 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
-    padding: SIZES.padding,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.padding / 2,
+    height: 50,
     marginBottom: SIZES.padding,
     ...FONTS.body1,
     color: COLORS.text,

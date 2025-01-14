@@ -14,7 +14,8 @@ import {
   ScrollView,
   Dimensions,
   Animated,
-  PanResponder
+  PanResponder,
+  Image
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -464,8 +465,15 @@ export default function BrainDumpScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={{ flex: 1 }}>
               <View style={styles.header}>
-                <Text style={styles.title}>Brain Dump</Text>
-                <Text style={styles.subtitle}>Record your thoughts</Text>
+                <View>
+                  <Text style={styles.greeting}>Welcome to</Text>
+                  <Text style={styles.appName}>SoulScribe</Text>
+                </View>
+                <Image 
+                  source={require('../../../assets/soulscribelogowhite.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
               </View>
 
               {!transcription && (
@@ -708,16 +716,26 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SIZES.padding,
   },
-  title: {
-    ...FONTS.h1,
-    color: COLORS.text,
-    fontWeight: 'bold',
+  greeting: {
+    ...FONTS.h2,
+    color: '#9CA3AF',
   },
-  subtitle: {
-    ...FONTS.body1,
-    color: COLORS.textSecondary,
+  appName: {
+    ...FONTS.largeTitle,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    textShadowColor: 'black',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  logo: {
+    width: 60,
+    height: 60,
   },
   recordingContainer: {
     alignItems: 'center',

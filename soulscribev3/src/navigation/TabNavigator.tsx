@@ -16,6 +16,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function TabNavigator() {
   return (
     <Tab.Navigator
+      initialRouteName="BrainDump"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {

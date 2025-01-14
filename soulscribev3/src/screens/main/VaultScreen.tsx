@@ -12,7 +12,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
@@ -202,8 +203,15 @@ export default function VaultScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>The Vault</Text>
-          <Text style={styles.subtitle}>Your journal entries</Text>
+          <View>
+            <Text style={styles.title}>The Vault</Text>
+            <Text style={styles.subtitle}>Your journal entries</Text>
+          </View>
+          <Image 
+            source={require('../../../assets/soulscribelogowhite.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.dateSelector}>
@@ -341,6 +349,9 @@ const styles = StyleSheet.create({
     paddingTop: SIZES.padding,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SIZES.padding,
     paddingHorizontal: SIZES.padding,
   },
@@ -521,5 +532,9 @@ const styles = StyleSheet.create({
   saveButtonText: {
     ...FONTS.body1,
     color: COLORS.white,
+  },
+  logo: {
+    width: 60,
+    height: 60,
   },
 }); 

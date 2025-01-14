@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SIZES, SHADOWS } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,8 +53,15 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Your account information</Text>
+          <View>
+            <Text style={styles.title}>Profile</Text>
+            <Text style={styles.subtitle}>Your account information</Text>
+          </View>
+          <Image 
+            source={require('../../../assets/soulscribelogowhite.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.profileCard}>
@@ -103,6 +110,9 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.padding,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SIZES.padding * 2,
   },
   title: {
@@ -160,5 +170,9 @@ const styles = StyleSheet.create({
   signOutText: {
     ...FONTS.body1,
     color: COLORS.error,
+  },
+  logo: {
+    width: 60,
+    height: 60,
   },
 }); 

@@ -273,8 +273,8 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Welcome to</Text>
-            <Text style={styles.appName}>SoulScribe</Text>
+            <Text style={styles.title}>Home</Text>
+            <Text style={styles.subtitle}>Your daily overview</Text>
           </View>
           <Image 
             source={require('../../../assets/soulscribelogowhite.png')}
@@ -455,23 +455,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SIZES.padding,
+    marginBottom: SIZES.padding * 2,
   },
-  greeting: {
-    ...FONTS.h2,
-    color: COLORS.textSecondary,
-  },
-  appName: {
-    ...FONTS.largeTitle,
-    color: COLORS.primary,
+  title: {
+    ...FONTS.h1,
+    color: COLORS.text,
     fontWeight: 'bold',
-    textShadowColor: 'black',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 0,
   },
-  logo: {
-    width: 60,
-    height: 60,
+  subtitle: {
+    ...FONTS.body1,
+    color: COLORS.textSecondary,
   },
   quoteContainer: {
     backgroundColor: COLORS.surface,
@@ -479,22 +472,20 @@ const styles = StyleSheet.create({
     padding: CONTAINER_PADDING,
     marginBottom: SIZES.padding,
     ...SHADOWS.small,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary + '40',
   },
   quoteHeader: {
     marginBottom: SIZES.padding * 0.5,
   },
   quoteHeaderTitle: {
     ...FONTS.h3,
-    color: '#fb923c',
+    color: '#1F2937',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
   },
   quoteHeaderSubtitle: {
     ...FONTS.body2,
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     textAlign: 'center',
     marginTop: 2,
     fontSize: 11,
@@ -514,7 +505,7 @@ const styles = StyleSheet.create({
   quoteText: {
     ...FONTS.body1,
     fontSize: 14,
-    color: COLORS.text,
+    color: '#374151',
     fontStyle: 'italic',
     marginBottom: SIZES.padding,
     lineHeight: 20,
@@ -529,12 +520,12 @@ const styles = StyleSheet.create({
   quoteLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.primary + '20',
+    backgroundColor: '#E5E7EB',
     marginRight: SIZES.padding,
   },
   quoteAuthor: {
     ...FONTS.body2,
-    color: COLORS.primary,
+    color: '#4B5563',
     fontSize: 12,
   },
   streakContainer: {
@@ -545,8 +536,6 @@ const styles = StyleSheet.create({
     padding: SIZES.padding * 0.75,
     marginBottom: SIZES.padding,
     ...SHADOWS.small,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary + '40',
   },
   streakIconContainer: {
     width: 50,
@@ -564,34 +553,32 @@ const styles = StyleSheet.create({
   },
   streakCount: {
     ...FONTS.h2,
-    color: COLORS.text,
+    color: '#1F2937',
     fontWeight: 'bold',
   },
   streakMessage: {
     ...FONTS.body2,
-    color: COLORS.textSecondary,
+    color: '#6B7280',
   },
   weeklyFeelsContainer: {
     backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
     padding: CONTAINER_PADDING,
     ...SHADOWS.small,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary + '40',
   },
   weeklyFeelsHeader: {
     marginBottom: SIZES.padding * 0.5,
   },
   weeklyFeelsTitle: {
     ...FONTS.h3,
-    color: '#fb923c',
+    color: '#1F2937',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
   },
   weeklyFeelsSubtitle: {
     ...FONTS.body2,
-    color: COLORS.textSecondary,
+    color: '#6B7280',
     textAlign: 'center',
     marginTop: 2,
     fontSize: 11,
@@ -638,7 +625,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     ...FONTS.body2,
-    color: COLORS.textSecondary,
+    color: '#9CA3AF',
     fontSize: 9,
     textTransform: 'uppercase',
   },
@@ -696,5 +683,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: CIRCLE_SIZE + 5,
     opacity: 0.9,
+  },
+  logo: {
+    width: 60,
+    height: 60,
   },
 });
